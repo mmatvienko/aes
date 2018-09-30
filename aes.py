@@ -161,13 +161,24 @@ def SubBytes(inp):
     new = []
     for b in inp:
         new.append(sbox[b])
-    print("subbytes out len", len(new))
+    # print("subbytes out len", len(new))
+    print("After SubBytes: ", [hex(x) for x in new])
+    return new
+
+
+def transpose(w):
+    # 16 long array
+    new = []
+    for y in [0,1,2,3]:
+        for x in [0,4,8,12]:
+            new.append(w[x+y])
     return new
 
 from collections import deque
 def ShiftRows(inp):
-    # TODO fix this length goes form 16 to 11
-    print("pre shift: ", inp)
+    # temp swothc col order to row order
+    inp = transpose(inp)
+    # print("pre shift: ", inp)
     d = deque(inp[4:8])
     d.rotate(-1)
     inp[4:8] = list(d)
@@ -180,35 +191,39 @@ def ShiftRows(inp):
     d.rotate(-3)
     inp[12:16] = list(d)
     
-    print("post shift: ", inp)
-    print("shift out length: ", len(inp))
+    # print("post shift: ", inp)
+    # print("shift out length: ", len(inp))
+    inp = transpose(inp)
+    print("After ShiftRows: ", [hex(x) for x in inp])
     return inp
 
 
 def MixColumns(inp):
     p = [0]*len(inp)
-    print("mix colums inp: ", [hex(x) for x in inp])
+    # print("mix colums inp: ", [hex(x) for x in inp])
+    inp = transpose(inp)
     for c in range(4):
-        print("c: ", c)
+        # print("c: ", c)
         p[c] = (mul2[inp[c]]) ^ (mul3[inp[1*4+c]]) ^ inp[2*4+c] ^ inp[3*4+c]
         p[1*4+c] = inp[c] ^ (mul2[inp[1*4+c]]) ^ (mul3[inp[2*4+c]]) ^ inp[3*4+c]
         p[2*4+c] = inp[c] ^ inp[1*4+c] ^ (mul2[inp[2*4+c]]) ^ (mul3[inp[3*4+c]])
         p[3*4+c] = (mul3[inp[c]]) ^ inp[1*4+c] ^ inp[2*4+c] ^ (mul2[inp[3*4+c]])
+    p = transpose(p)
+    print("After MixColumns: ", [hex(x) for x in p])
     return p
 
 
 def AddRoundKey(inp, w):
-    print([hex(x) for x in w])
     p = [0]*len(inp)
-    print("length of inp array: ", len(inp))
+    # print("length of inp array: ", len(inp))
     for c in range(4):
-        print(len(w))
         word = w[c]
-        p[c] = inp[c] ^ (word>>(8*3) & 0xFF)
-        p[1*4+c] = inp[1*4+c] ^ (word>>(8*2) & 0xFF)
-        p[2*4+c] = inp[2*4+c] ^ (word>>(8*1) & 0xFF)
-        p[3*4+c] = inp[3*4+c] ^ (word & 0xFF)
-    print("length of outp array: ", len(p))        
+        p[c] = inp[c] ^ (w[0]>>(8*(3-c))) & 0xFF # word>>(8*3) & 0xFF)
+        p[1*4+c] = inp[1*4+c] ^ (w[1]>>(8*(3-c))) & 0xFF # word>>(8*2) & 0xFF)
+        p[2*4+c] = inp[2*4+c] ^ (w[2]>>(8*(3-c))) & 0xFF # word>>(8*1) & 0xFF)
+        p[3*4+c] = inp[3*4+c] ^ (w[3]>>(8*(3-c))) & 0xFF # word & 0xFF)
+    # print("length of outp array: ", len(p))
+    print("After AddRoundKey: ", [hex(x) for x in p])
     return p
 
 def RotWord(word):
