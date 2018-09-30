@@ -162,7 +162,7 @@ def SubBytes(inp):
     for b in inp:
         new.append(sbox[b])
     # print("subbytes out len", len(new))
-    print("After SubBytes: ", [hex(x) for x in new])
+    # print("After SubBytes: ", [hex(x) for x in new])
     return new
 
 
@@ -194,7 +194,7 @@ def ShiftRows(inp):
     # print("post shift: ", inp)
     # print("shift out length: ", len(inp))
     inp = transpose(inp)
-    print("After ShiftRows: ", [hex(x) for x in inp])
+    # print("After ShiftRows: ", [hex(x) for x in inp])
     return inp
 
 
@@ -209,7 +209,7 @@ def MixColumns(inp):
         p[2*4+c] = inp[c] ^ inp[1*4+c] ^ (mul2[inp[2*4+c]]) ^ (mul3[inp[3*4+c]])
         p[3*4+c] = (mul3[inp[c]]) ^ inp[1*4+c] ^ inp[2*4+c] ^ (mul2[inp[3*4+c]])
     p = transpose(p)
-    print("After MixColumns: ", [hex(x) for x in p])
+    # print("After MixColumns: ", [hex(x) for x in p])
     return p
 
 
@@ -223,19 +223,19 @@ def AddRoundKey(inp, w):
         p[2*4+c] = inp[2*4+c] ^ (w[2]>>(8*(3-c))) & 0xFF # word>>(8*1) & 0xFF)
         p[3*4+c] = inp[3*4+c] ^ (w[3]>>(8*(3-c))) & 0xFF # word & 0xFF)
     # print("length of outp array: ", len(p))
-    print("After AddRoundKey: ", [hex(x) for x in p])
+    # print("After AddRoundKey: ", [hex(x) for x in p])
     return p
 
 def RotWord(word):
-    print("rotword: ", hex(word))
+    # print("rotword: ", hex(word))
     left = (word >> 24) & 0xFF
     word = ((word << 8) & 0xFFFFFF00) ^ left
-    print("after rotword: ",hex(word))
+    # print("after rotword: ",hex(word))
     return word
 
 
 def SubWord(word):
-    print("subword: ", hex(word))
+    # print("subword: ", hex(word))
     b1 = sbox[word>>24 & 0xFF]
     # print("b1 ", hex(b1<<24))
     b2 = sbox[word>>16 & 0xFF]
@@ -245,15 +245,15 @@ def SubWord(word):
     b4 = sbox[word & 0xFF]
     # print("b4 ", hex(b4))
     word = b1<<24 ^ b2<<16 ^ b3<<8 ^ b4
-    print("after subword: ", hex(word))
+    # print("after subword: ", hex(word))
     return word
 
 
 def KeyExpansion(key, Nk, Nb, Nr):
     w = [0x0]*(Nb*(Nr+1))
-    print(len(w))
-    print("key: ",key)
-    print("length of w: ", len(w))
+    # print(len(w))
+    # print("key: ",key)
+    # print("length of w: ", len(w))
     i = 0
     while i < Nk:
         w[i] = key[4*i]<<3*8 ^ key[4*i+1]<<2*8 ^ key[4*i+2]<<8 ^ key[4*i+3]
@@ -262,12 +262,12 @@ def KeyExpansion(key, Nk, Nb, Nr):
     i = Nk
     while i < Nb * (Nr+1):
         temp = w[i - 1]
-        print("before if: ", hex(temp))
+        # print("before if: ", hex(temp))
         if i % Nk == 0:
             # check on rotword and subword
             temp = SubWord(RotWord(temp)) ^ rcon[i//Nk]<<24
-            print("rcon, ", hex(rcon[i//Nk]))
-            print("after if: ", hex(temp))
+            # print("rcon, ", hex(rcon[i//Nk]))
+            # print("after if: ", hex(temp))
         elif Nk > 6 and i % Nk == 4:
             temp = SubWord(temp)
         w[i] = (w[i-Nk] ^ temp) & 0xFFFFFFFF
@@ -285,7 +285,7 @@ def Cipher(inp, w, Nb, Nr):
         # print how many rounds
     inp = SubBytes(inp)
     inp = ShiftRows(inp)
-    inp = AddRoundKey(inp, w[round*Nb:(round+1)*Nb]) # is this right?
+    inp = AddRoundKey(inp, w[-1*Nb:]) # is this right?
 
     return inp
 
