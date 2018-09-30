@@ -161,19 +161,35 @@ def SubBytes(inp):
     new = []
     for b in inp:
         new.append(sbox[b])
+    print("subbytes out len", len(new))
     return new
 
-
+from collections import deque
 def ShiftRows(inp):
-    inp[4:8] = inp[4:8][::-3]
-    inp[8:12] = inp[8::12][::-2]
-    inp[12:16] = inp[12:16][::-1]
+    # TODO fix this length goes form 16 to 11
+    print("pre shift: ", inp)
+    d = deque(inp[4:8])
+    d.rotate(-1)
+    inp[4:8] = list(d)
+
+    d = deque(inp[8:12])
+    d.rotate(-2)
+    inp[8:12] = list(d)
+
+    d = deque(inp[12:16])
+    d.rotate(-3)
+    inp[12:16] = list(d)
+    
+    print("post shift: ", inp)
+    print("shift out length: ", len(inp))
     return inp
 
 
 def MixColumns(inp):
     p = [0]*len(inp)
+    print("mix colums inp: ", [hex(x) for x in inp])
     for c in range(4):
+        print("c: ", c)
         p[c] = (mul2[inp[c]]) ^ (mul3[inp[1*4+c]]) ^ inp[2*4+c] ^ inp[3*4+c]
         p[1*4+c] = inp[c] ^ (mul2[inp[1*4+c]]) ^ (mul3[inp[2*4+c]]) ^ inp[3*4+c]
         p[2*4+c] = inp[c] ^ inp[1*4+c] ^ (mul2[inp[2*4+c]]) ^ (mul3[inp[3*4+c]])
@@ -182,19 +198,23 @@ def MixColumns(inp):
 
 
 def AddRoundKey(inp, w):
+    print([hex(x) for x in w])
     p = [0]*len(inp)
+    print("length of inp array: ", len(inp))
     for c in range(4):
+        print(len(w))
         word = w[c]
         p[c] = inp[c] ^ (word>>(8*3) & 0xFF)
         p[1*4+c] = inp[1*4+c] ^ (word>>(8*2) & 0xFF)
         p[2*4+c] = inp[2*4+c] ^ (word>>(8*1) & 0xFF)
         p[3*4+c] = inp[3*4+c] ^ (word & 0xFF)
-
+    print("length of outp array: ", len(p))        
+    return p
 
 def RotWord(word):
     print("rotword: ", hex(word))
-    left = word >> 24
-    word = word<<8 ^ left
+    left = (word >> 24) & 0xFF
+    word = ((word << 8) & 0xFFFFFF00) ^ left
     print("after rotword: ",hex(word))
     return word
 
@@ -216,6 +236,8 @@ def SubWord(word):
 
 def KeyExpansion(key, Nk, Nb, Nr):
     w = [0x0]*(Nb*(Nr+1))
+    print(len(w))
+    print("key: ",key)
     print("length of w: ", len(w))
     i = 0
     while i < Nk:
@@ -225,29 +247,30 @@ def KeyExpansion(key, Nk, Nb, Nr):
     i = Nk
     while i < Nb * (Nr+1):
         temp = w[i - 1]
-        print("i: ", i)
         print("before if: ", hex(temp))
         if i % Nk == 0:
-            temp = SubWord(RotWord(temp)) ^ rcon[i//Nk]
+            # check on rotword and subword
+            temp = SubWord(RotWord(temp)) ^ rcon[i//Nk]<<24
+            print("rcon, ", hex(rcon[i//Nk]))
             print("after if: ", hex(temp))
         elif Nk > 6 and i % Nk == 4:
             temp = SubWord(temp)
-        w[i] = (w[i-Nk] ^ temp) & 0xFF
+        w[i] = (w[i-Nk] ^ temp) & 0xFFFFFFFF
         i += 1
     return w
 
 
 def Cipher(inp, w, Nb, Nr):
-    inp = AddRoundKey(inp, w[0:(Nb - 1)])
-    for round in range(1,Nr - 1):
+    inp = AddRoundKey(inp, w[0:Nb])
+    for round in range(1,Nr):
         inp = SubBytes(inp)
         inp = ShiftRows(inp)
         inp = MixColumns(inp)
-        inp = AddRoundKey(inp, w[round*Nb:(round+1)*Nb - 1])
-
+        inp = AddRoundKey(inp, w[round*Nb:(round+1)*Nb])
+        # print how many rounds
     inp = SubBytes(inp)
     inp = ShiftRows(inp)
-    inp = AddRoundKey(inp, w[round*Nb:(round+1)*Nb - 1])
+    inp = AddRoundKey(inp, w[round*Nb:(round+1)*Nb]) # is this right?
 
     return inp
 
