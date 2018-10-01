@@ -42,10 +42,11 @@ else:
 inp = None
 with open(INPUT_FILE, 'rb') as f:
     inp = f.read()
-    # do some padding
-    # thx for the code michael <3
-    length = 16 - (len(inp) % 16)
-    inp += bytes([length])*length
+    if MODE == 'encrypt':
+        # do some padding
+        # thx for the code michael <3
+        length = 16 - (len(inp) % 16)
+        inp += bytes([length])*length
 
 key = None
 with open(KEY_FILE, 'rb') as f:
@@ -54,13 +55,16 @@ with open(KEY_FILE, 'rb') as f:
 w = [int(x) for x in KeyExpansion(key, Nk, Nb, Nr)]
 
 final = []
+
 if MODE == 'encrypt':
     for c in range(len(inp)//16):
         for x in Cipher(inp[16*c:16*(c+1)],w,Nb,Nr):
             final.append(x)
 elif MODE == 'decrypt':
     # do decrypt stuff
-    pass
+    for c in range(len(inp)//16):
+        for x in InvCipher(inp[16*c:16*(c+1)],w,Nb,Nr):
+            final.append(x)
 else:
     exit("modes can either be encrypt of decrypt only")
 # just making sure everything is padded
